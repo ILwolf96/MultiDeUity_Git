@@ -1,32 +1,29 @@
-using UnityEngine;
-using UnityEngine.UI;
 using Photon.Pun;
 using Photon.Realtime;
+using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class PhotonManager : MonoBehaviourPunCallbacks
 {
-    public Button connectButton;
-    public Button joinLobbyButton;
-    public Button createRoomButton;
-    public Button joinRoomButton;
-    public Button leaveRoomButton;
-
+    [Header("UI References")]
     public InputField lobbyNameInput;
     public InputField roomNameInput;
     public InputField maxPlayersInput;
-
     public Text statusText;
+    public Button connectButton;
+    public Button joinLobbyButton;
+    public Button createRoomButton;
+    public Button leaveRoomButton;
     public Transform roomListContainer;
     public Transform playerListContainer;
+
+    [Header("Prefabs")]
     public GameObject roomListItemPrefab;
     public GameObject playerListItemPrefab;
 
-    private Dictionary<string, RoomInfo> cachedRoomList = new Dictionary<string, RoomInfo>();
-
-    void Start()
+    private void Start()
     {
-        // Initial UI setup
         UpdateUI();
     }
 
@@ -37,29 +34,73 @@ public class PhotonManager : MonoBehaviourPunCallbacks
         UpdateUI();
     }
 
+    public override void OnConnectedToMaster()
+    {
+        statusText.text = "Connected to server.";
+        UpdateUI();
+    }
+
     public void JoinLobby()
     {
-        string lobbyName = lobbyNameInput.text;
-        PhotonNetwork.JoinLobby(new TypedLobby(lobbyName, LobbyType.Default));
-        statusText.text = $"Joining lobby '{lobbyName}'...";
+        if (!string.IsNullOrEmpty(lobbyNameInput.text))
+        {
+            PhotonNetwork.JoinLobby(new TypedLobby(lobbyNameInput.text, LobbyType.Default));
+            statusText.text = $"Joining lobby '{lobbyNameInput.text}'...";
+        }
+        else
+        {
+            statusText.text = "Lobby name cannot be empty.";
+        }
         UpdateUI();
+    }
+
+    public override void OnJoinedLobby()
+    {
+        statusText.text = $"Joined lobby '{PhotonNetwork.CurrentLobby.Name}'.";
+        UpdateUI();
+    }
+
+    public override void OnRoomListUpdate(List<RoomInfo> roomList)
+    {
+        UpdateRoomList(roomList);
     }
 
     public void CreateRoom()
     {
-        string roomName = roomNameInput.text;
-        byte maxPlayers = byte.Parse(maxPlayersInput.text);
-        RoomOptions options = new RoomOptions { MaxPlayers = maxPlayers };
-        PhotonNetwork.CreateRoom(roomName, options);
-        statusText.text = $"Creating room '{roomName}'...";
+        if (!string.IsNullOrEmpty(roomNameInput.text) && int.TryParse(maxPlayersInput.text, out int maxPlayers))
+        {
+            RoomOptions roomOptions = new RoomOptions { MaxPlayers = (byte)maxPlayers };
+            PhotonNetwork.CreateRoom(roomNameInput.text, roomOptions);
+            statusText.text = $"Creating room '{roomNameInput.text}'...";
+        }
+        else
+        {
+            statusText.text = "Room name or max players is invalid.";
+        }
         UpdateUI();
     }
 
-    public void JoinRoom(string roomName)
+    public override void OnCreatedRoom()
     {
-        PhotonNetwork.JoinRoom(roomName);
-        statusText.text = $"Joining room '{roomName}'...";
+        statusText.text = $"Room '{PhotonNetwork.CurrentRoom.Name}' created.";
         UpdateUI();
+    }
+
+    public override void OnJoinedRoom()
+    {
+        statusText.text = $"Joined room '{PhotonNetwork.CurrentRoom.Name}'.";
+        UpdatePlayerList(); // Update player list using PhotonNetwork.CurrentRoom
+        UpdateUI();
+    }
+
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        UpdatePlayerList(); // Refresh player list when a new player joins
+    }
+
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        UpdatePlayerList(); // Refresh player list when a player leaves
     }
 
     public void LeaveRoom()
@@ -69,23 +110,22 @@ public class PhotonManager : MonoBehaviourPunCallbacks
         UpdateUI();
     }
 
-    private void UpdateUI()
+    public override void OnLeftRoom()
     {
-        connectButton.interactable = !PhotonNetwork.IsConnected;
-        joinLobbyButton.interactable = PhotonNetwork.IsConnected && !PhotonNetwork.InLobby;
-        createRoomButton.interactable = PhotonNetwork.InLobby;
-        joinRoomButton.interactable = PhotonNetwork.InLobby && cachedRoomList.Count > 0;
-        leaveRoomButton.interactable = PhotonNetwork.InRoom;
+        statusText.text = "Left room.";
+        UpdateUI();
     }
 
-    private void UpdateRoomList()
+    private void UpdateRoomList(List<RoomInfo> roomList)
     {
+        // Clear current room list UI
         foreach (Transform child in roomListContainer)
         {
             Destroy(child.gameObject);
         }
 
-        foreach (RoomInfo roomInfo in cachedRoomList.Values)
+        // Populate room list UI
+        foreach (RoomInfo roomInfo in roomList)
         {
             GameObject roomItem = Instantiate(roomListItemPrefab, roomListContainer);
             roomItem.GetComponentInChildren<Text>().text = $"{roomInfo.Name} ({roomInfo.PlayerCount}/{roomInfo.MaxPlayers})";
@@ -95,63 +135,32 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
     private void UpdatePlayerList()
     {
+        // Clear current player list UI
         foreach (Transform child in playerListContainer)
         {
             Destroy(child.gameObject);
         }
 
-        foreach (Player player in PhotonNetwork.PlayerList)
+        // Populate player list UI
+        foreach (KeyValuePair<int, Player> playerInfo in PhotonNetwork.CurrentRoom.Players)
         {
             GameObject playerItem = Instantiate(playerListItemPrefab, playerListContainer);
-            playerItem.GetComponentInChildren<Text>().text = player.NickName;
+            playerItem.GetComponentInChildren<Text>().text = playerInfo.Value.NickName;
         }
     }
 
-    public override void OnConnectedToMaster()
+    public void JoinRoom(string roomName)
     {
-        statusText.text = "Connected to server.";
+        PhotonNetwork.JoinRoom(roomName);
+        statusText.text = $"Joining room '{roomName}'...";
         UpdateUI();
     }
 
-    public override void OnJoinedLobby()
+    private void UpdateUI()
     {
-        statusText.text = "Joined lobby.";
-        cachedRoomList.Clear();
-        UpdateUI();
-    }
-
-    public override void OnRoomListUpdate(List<RoomInfo> roomList)
-    {
-        foreach (RoomInfo room in roomList)
-        {
-            if (room.RemovedFromList)
-                cachedRoomList.Remove(room.Name);
-            else
-                cachedRoomList[room.Name] = room;
-        }
-        UpdateRoomList();
-    }
-
-    public override void OnJoinedRoom()
-    {
-        statusText.text = $"Joined room '{PhotonNetwork.CurrentRoom.Name}'.";
-        UpdatePlayerList();
-        UpdateUI();
-    }
-
-    public override void OnPlayerEnteredRoom(Player newPlayer)
-    {
-        UpdatePlayerList();
-    }
-
-    public override void OnPlayerLeftRoom(Player otherPlayer)
-    {
-        UpdatePlayerList();
-    }
-
-    public override void OnLeftRoom()
-    {
-        statusText.text = "Left room.";
-        UpdateUI();
+        connectButton.interactable = !PhotonNetwork.IsConnected;
+        joinLobbyButton.interactable = PhotonNetwork.IsConnected && PhotonNetwork.CurrentLobby == null;
+        createRoomButton.interactable = PhotonNetwork.IsConnected && PhotonNetwork.InLobby;
+        leaveRoomButton.interactable = PhotonNetwork.InRoom;
     }
 }
