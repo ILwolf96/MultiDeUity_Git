@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 10
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -43,7 +43,6 @@ RenderSettings:
 LightmapSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 12
-  m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -66,9 +65,6 @@ LightmapSettings:
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 1
@@ -885,7 +881,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Join Room
+  m_Text: Show Next Room
 --- !u!222 &555013201
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -894,6 +890,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 555013198}
   m_CullTransparentMesh: 1
+--- !u!114 &557902382 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1770335401795560552, guid: cb757b8b57e2afe40bae57d1cfe87bc7, type: 3}
+  m_PrefabInstance: {fileID: 8085696061738110287}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &587900954
 GameObject:
   m_ObjectHideFlags: 0
@@ -1939,7 +1946,8 @@ MonoBehaviour:
   joinLobbyButton: {fileID: 921423202}
   createRoomButton: {fileID: 1547291160}
   leaveRoomButton: {fileID: 974033}
-  roomListContainer: {fileID: 8085696061738110289}
+  nextRoomButton: {fileID: 8085696061738110290}
+  joinRoomButton: {fileID: 1695618035}
   playerListContainer: {fileID: 8391029422425467512}
   roomListItemPrefab: {fileID: 8085696061738110288}
   playerListItemPrefab: {fileID: 8391029422425467511}
@@ -2448,8 +2456,8 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1253129641}
         m_TargetAssemblyTypeName: PhotonManager, Assembly-CSharp
-        m_MethodName: JoinRoom
-        m_Mode: 5
+        m_MethodName: ShowNextRoom
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -2521,9 +2529,8 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1719793009}
   m_Enabled: 1
-  serializedVersion: 10
+  serializedVersion: 11
   m_Type: 1
-  m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
   m_Range: 10
@@ -2573,8 +2580,12 @@ Light:
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
 --- !u!4 &1719793011
 Transform:
   m_ObjectHideFlags: 0
@@ -3003,7 +3014,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4979737510305947734, guid: cb757b8b57e2afe40bae57d1cfe87bc7, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4979737510305947734, guid: cb757b8b57e2afe40bae57d1cfe87bc7, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -3025,6 +3036,10 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
+    - target: {fileID: 6766617381941104715, guid: cb757b8b57e2afe40bae57d1cfe87bc7, type: 3}
+      propertyPath: roomNameText
+      value: 
+      objectReference: {fileID: 557902382}
     - target: {fileID: 7069443481167654474, guid: cb757b8b57e2afe40bae57d1cfe87bc7, type: 3}
       propertyPath: m_Name
       value: RoomList
@@ -3044,6 +3059,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 4542007626503358404, guid: cb757b8b57e2afe40bae57d1cfe87bc7, type: 3}
   m_PrefabInstance: {fileID: 8085696061738110287}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8085696061738110290 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4979737510305947734, guid: cb757b8b57e2afe40bae57d1cfe87bc7, type: 3}
+  m_PrefabInstance: {fileID: 8085696061738110287}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8085696061738110288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &8391029422425467510
 PrefabInstance:
   m_ObjectHideFlags: 0
