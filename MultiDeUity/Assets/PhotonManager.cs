@@ -184,10 +184,9 @@ public class PhotonManager : MonoBehaviourPunCallbacks
         playerListText.text = "";
     }
 
-    public void ShowNextRoom()
+    public void ShowNextRoom() // Placeholder, managed to make it work on update
     {
-        // Placeholder for showing the next available room
-        // This functionality is managed by OnRoomListUpdate
+        // This function is now now at OnRoomListUpdate
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
@@ -215,9 +214,50 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     private void RPC_SelectCharacter(int characterIndex, PhotonMessageInfo info)
     {
         Debug.Log($"Character selected: {characterIndex} by player {info.Sender.NickName}");
-        // Handle character selection logic here
-        // Instantiate or activate the selected character for this player
+
+        // Ensure the selected character index is within range
+        if (characterIndex >= 0 && characterIndex < characters.Length)
+        {
+            // Check if the character is already taken
+            foreach (Photon.Realtime.Player player in PhotonNetwork.PlayerList)
+            {
+                if (player.CustomProperties.TryGetValue("SelectedCharacter", out object existingCharacterIndex) && (int)existingCharacterIndex == characterIndex)
+                {
+                    // Character is already taken
+                    photonView.RPC("RPC_CharacterSelectionFailed", info.Sender, characterIndex);
+                    return;
+                }
+            }
+
+            // Assign the selected character to this player
+            PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { { "SelectedCharacter", characterIndex } });
+
+            // Instantiate / activate the selected character for this player
+            GameObject character = Instantiate(characters[characterIndex], Vector3.zero, Quaternion.identity);
+            PhotonView characterPhotonView = character.GetComponent<PhotonView>();
+            if (characterPhotonView != null)
+            {
+                characterPhotonView.TransferOwnership(info.Sender);
+            }
+
+            //selection was successful
+            photonView.RPC("RPC_CharacterSelectionSuccess", info.Sender, characterIndex);
+        }
     }
+
+    [PunRPC]
+    private void RPC_CharacterSelectionFailed(int characterIndex)
+    {
+        //failure 
+        Debug.LogError($"Character selection failed: Character {characterIndex} is already taken.");
+    }
+
+    [PunRPC]
+    private void RPC_CharacterSelectionSuccess(int characterIndex)
+    {
+        Debug.Log($"Character {characterIndex} successfully selected.");
+    }
+
 
     public void SendChatMessage()
     {
